@@ -1081,13 +1081,46 @@ for poly in [-2, -1, 1, 2, 3]:
             print("")
             print("\\begin{" + "align}")
 
-            get_systematic_errors(N, model_name, poly=poly, poly2=poly2)
+            results = get_systematic_errors(N, model_name, poly=poly, poly2=poly2)
             central_values = results["params_central"]
             GL_min = results["GL_min"]
             GL_max = 76.8
 
-            def polyno(*args):
-                return polynomial_range_2a(poly, poly2, *args)
+            if model_name == "poly_range":
+                if N == 2:
+                    def polyno(*args):
+                        return polynomial_range_1a(poly, poly2, *args)
+
+                if N == 4:
+                    def polyno(*args):
+                        return polynomial_range_2a(poly, poly2, *args)
+
+            if model_name == "poly_range_no_log":
+                if N == 2:
+                    def polyno(*args):
+                        return polynomial_range_no_log_1a(poly, poly2, *args)
+
+                if N == 4:
+                    def polyno(*args):
+                        return polynomial_range_no_log_2a(poly, poly2, *args)
+
+            if model_name == "poly_no_scaling":
+                if N == 2:
+                    def polyno(*args):
+                        return polynomial_no_scaling_1a(poly, poly2, *args)
+
+                if N == 4:
+                    def polyno(*args):
+                        return polynomial_no_scaling_2a(poly, poly2, *args)
+
+            if model_name == "poly_no_scaling_no_log":
+                if N == 2:
+                    def polyno(*args):
+                        return polynomial_no_scaling_no_log_1a(poly, poly2, *args)
+
+                if N == 4:
+                    def polyno(*args):
+                        return polynomial_no_scaling_no_log_2a(poly, poly2, *args)
 
             model = polyno
 
@@ -1100,7 +1133,6 @@ for poly in [-2, -1, 1, 2, 3]:
 
             if N == 4:
                 Bbar_s_in = [0.42, 0.43]
-            GL_max = 76.8
 
             samples, g_s, L_s, Bbar_s, m_s = load_h5_data(h5_data_file, N_s_in, g_s_in, L_s_in,
                                                             Bbar_s_in, GL_min, GL_max)
@@ -1126,9 +1158,15 @@ for poly in [-2, -1, 1, 2, 3]:
                     plt.scatter(1 / L_s[sub_ind], m_s[sub_ind] / g, color=colors(g))
 
                     if i == 0:
-                        plt.plot(L_space, model(1, 2, g, 1 / L_space, Bbar, *central_values) / g, label=f'g = {g}', color=colors(g))
+                        plt.plot(L_space, model(N, g, 1 / L_space, Bbar, *central_values) / g, label=f'g = {g}', color=colors(g))
 
                     if i == 1:
-                        plt.plot(L_space, model(1, 2, g, 1 / L_space, Bbar, *central_values) / g, color=colors(g))
+                        plt.plot(L_space, model(N, g, 1 / L_space, Bbar, *central_values) / g, color=colors(g))
 
                     print("\\end{align" + "}")
+
+            plt.xlabel("a / L")
+            plt.ylabel("m[B = Bbar] / g")
+            plt.legend()
+            plt.savefig(f"graphs/{model_name}_fit_plot_poly{poly}_poly2{poly2}.png", dpi=500)
+            plt.close('all')
