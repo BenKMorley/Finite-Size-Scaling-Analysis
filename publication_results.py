@@ -1095,32 +1095,52 @@ for poly in [-2, -1, 1, 2, 3]:
                     def polyno(*args):
                         return polynomial_range_2a(poly, poly2, *args)
 
+                    def polyno2(Bbar_s, *args):
+                        return polynomial_range_2a_Bbar_list(Bbar_s, poly, poly2, *args)
+
+                    model_Bbar_list = polyno2
+
             if model_name == "poly_range_no_log":
                 if N == 2:
                     def polyno(*args):
-                        return polynomial_range_no_log_1a(poly, poly2, *args)
+                        return polynomial_range_1a_no_log(poly, poly2, *args)
 
                 if N == 4:
                     def polyno(*args):
-                        return polynomial_range_no_log_2a(poly, poly2, *args)
+                        return polynomial_range_2a_no_log(poly, poly2, *args)
 
-            if model_name == "poly_no_scaling":
+                    def polyno2(Bbar_s, *args):
+                        return polynomial_range_2a_no_log_Bbar_list(Bbar_s, poly, poly2, *args)
+
+                    model_Bbar_list = polyno2
+
+            if model_name == "poly_range_no_scaling":
                 if N == 2:
                     def polyno(*args):
-                        return polynomial_no_scaling_1a(poly, poly2, *args)
+                        return polynomial_range_1a_no_scaling(poly, poly2, *args)
 
                 if N == 4:
                     def polyno(*args):
-                        return polynomial_no_scaling_2a(poly, poly2, *args)
+                        return polynomial_range_2a_no_scaling(poly, poly2, *args)
 
-            if model_name == "poly_no_scaling_no_log":
+                    def polyno2(Bbar_s, *args):
+                        return polynomial_range_2a_no_scaling_Bbar_list(Bbar_s, poly, poly2, *args)
+
+                    model_Bbar_list = polyno2
+
+            if model_name == "poly_range_no_scaling_no_log":
                 if N == 2:
                     def polyno(*args):
-                        return polynomial_no_scaling_no_log_1a(poly, poly2, *args)
+                        return polynomial_range_1a_no_scaling_no_log(poly, poly2, *args)
 
                 if N == 4:
                     def polyno(*args):
-                        return polynomial_no_scaling_no_log_2a(poly, poly2, *args)
+                        return polynomial_range_2a_no_scaling_no_log(poly, poly2, *args)
+
+                    def polyno2(Bbar_s, *args):
+                        return polynomial_range_2a_no_scaling_no_log_Bbar_list(Bbar_s, poly, poly2, *args)
+
+                    model_Bbar_list = polyno2
 
             model = polyno
 
@@ -1151,22 +1171,23 @@ for poly in [-2, -1, 1, 2, 3]:
 
             L_space = numpy.linspace(1 / max(L_s), 1 / min(L_s), 1000)
 
-            for i, Bbar in enumerate(set(Bbar_s)):
-                for g in set(g_s):
+            for g in set(g_s):
+                for i, Bbar in enumerate(set(Bbar_s)):
                     sub_ind = numpy.argwhere(numpy.logical_and(g_s == g, Bbar_s == Bbar))
 
-                    plt.scatter(1 / L_s[sub_ind], m_s[sub_ind] / g, color=colors(g))
-
                     if i == 0:
-                        plt.plot(L_space, model(N, g, 1 / L_space, Bbar, *central_values) / g, label=f'g = {g}', color=colors(g))
+                        plt.plot(L_space, model_Bbar_list(Bbar_s, N, g, 1 / L_space, Bbar, *central_values) / g, label=f'g = {g}', color=colors(g))
 
                     if i == 1:
-                        plt.plot(L_space, model(N, g, 1 / L_space, Bbar, *central_values) / g, color=colors(g))
+                        plt.plot(L_space, model_Bbar_list(Bbar_s, N, g, 1 / L_space, Bbar, *central_values) / g, color=colors(g))
+
+                    plt.scatter(1 / L_s[sub_ind], m_s[sub_ind] / g, color=colors(g))
 
                     print("\\end{align" + "}")
 
             plt.xlabel("a / L")
             plt.ylabel("m[B = Bbar] / g")
+            plt.title(f"polynomial range = [{poly}, {poly2}]")
             plt.legend()
-            plt.savefig(f"graphs/{model_name}_fit_plot_poly{poly}_poly2{poly2}.png", dpi=500)
+            plt.savefig(f"graphs/{model_name}_fit_plot_{poly}_{poly2}.png", dpi=500)
             plt.close('all')
