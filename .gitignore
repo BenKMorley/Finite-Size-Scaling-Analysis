@@ -1,0 +1,5 @@
+MULTINEST_samples/*
+__pycache__
+graphs/*
+*cypthon*
+*.pdf

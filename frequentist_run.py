@@ -28,14 +28,13 @@
 from model_definitions import *
 from scipy.optimize import minimize, least_squares
 from scipy.linalg import logm
-from tqdm import tqdm
 import warnings
 
 
 def run_frequentist_analysis(input_h5_file, model, N_s, g_s, L_s, Bbar_s_in,
                              GL_min, GL_max, param_names, x0, method="lm",
                              no_samples=500, run_bootstrap=True,
-                             print_info=True):
+                             print_info=True, retrun_chisq=False):
     """
         Central function to run the frequentist analysis. This function is
         used repeatedly in publication_results.py
@@ -88,6 +87,9 @@ def run_frequentist_analysis(input_h5_file, model, N_s, g_s, L_s, Bbar_s_in,
                                                   Bbar_s_in, GL_min, GL_max)
     N = N_s[0]
 
+    # pdb.set_trace()
+    print(sum(g_s / (2 * numpy.pi * N) < 1 / L_s))
+
     cov_matrix, different_ensemble = cov_matrix_calc(g_s, L_s, m_s, samples)
     cov_1_2 = numpy.linalg.cholesky(cov_matrix)
     cov_inv = numpy.linalg.inv(cov_1_2)
@@ -126,7 +128,7 @@ def run_frequentist_analysis(input_h5_file, model, N_s, g_s, L_s, Bbar_s_in,
     if run_bootstrap:
         param_estimates = numpy.zeros((no_samples, n_params))
 
-        for i in tqdm(range(no_samples)):
+        for i in range(no_samples):
             m_s = samples[:, i]
 
             res_function = make_res_function(N_s[0], m_s, g_s, L_s, Bbar_s)
@@ -150,4 +152,9 @@ def run_frequentist_analysis(input_h5_file, model, N_s, g_s, L_s, Bbar_s_in,
 
         return p, param_estimates, dof
 
-    return p, res.x, dof
+    # print(res.x)
+
+    if retrun_chisq:
+        return p, res.x, dof, chisq
+    else:
+        return p, res.x, dof

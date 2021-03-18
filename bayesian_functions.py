@@ -35,7 +35,7 @@ from multiprocessing import Pool, current_process
 
 
 # Function that returns likelihood function for use in MULTINEST
-def likelihood_maker(n_params, cov_inv, model, res_function):
+def likelihood_maker(n_params, cov_inv, model, res_function, lognormal=False, mu_s=None, sigma_s=None, param_idxs=None):
     """
         INPUTS :
         --------
@@ -53,14 +53,31 @@ def likelihood_maker(n_params, cov_inv, model, res_function):
         ---------
         loglike: Function of the log of the likelihood ready for MULTINEST
     """
-    def loglike(cube, ndim, nparams):
-        params = []
-        for i in range(n_params):
-            params.append(cube[i])
 
-        chisq = chisq_calc(params, cov_inv, model, res_function)
+    if not lognormal:
+        def loglike(cube, ndim, nparams):
+            params = []
+            for i in range(n_params):
+                params.append(cube[i])
 
-        return -0.5 * chisq
+            chisq = chisq_calc(params, cov_inv, model, res_function)
+
+            return -0.5 * chisq
+
+    else:
+        def loglike(cube, ndim, nparams):
+            params = []
+            for i in range(n_params):
+                params.append(cube[i])
+
+            chisq = chisq_calc(params, cov_inv, model, res_function)
+
+            # Add in the lognormal pdf
+            for i, idx in enumerate(param_idxs):
+                log_n = numpy.log(abs(1 / (cube[idx] * sigma_s[i] * numpy.sqrt(2 * numpy.pi)))) \
+                        - (numpy.log(abs(cube[idx])) - mu_s[i]) ** 2 / (2 * sigma_s[i] ** 2)
+
+            return -0.5 * chisq
 
     return loglike
 
@@ -91,7 +108,8 @@ def run_pymultinest(prior_range, model, GL_min, GL_max, n_params, directory,
                     prior_name="", n_live_points=400, INS=False,
                     clean_files=False, sampling_efficiency=0.3,
                     return_analysis_small=False, tag="", keep_GLmax=True,
-                    seed=-1, param_names_latex=None):
+                    seed=-1, param_names_latex=None, lognormal=False, mu_s=None,
+                    sigma_s=None, param_idxs=None):
     """
         See documentation for pymultinest.run()
 
@@ -197,7 +215,8 @@ def run_pymultinest(prior_range, model, GL_min, GL_max, n_params, directory,
 
     # Calculate log-likelihood and prior functions for use by MULTINEST
     likelihood_function = likelihood_maker(n_params, cov_inv, model,
-                                           res_function)
+                                           res_function, lognormal=lognormal, mu_s=mu_s,
+                                            sigma_s=sigma_s, param_idxs=param_idxs)
     prior = prior_maker(prior_range)
 
     # The filenames are limited to 100 charachters in the MUTLTINEST code, so
