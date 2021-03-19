@@ -87,9 +87,6 @@ def run_frequentist_analysis(input_h5_file, model, N_s, g_s, L_s, Bbar_s_in,
                                                   Bbar_s_in, GL_min, GL_max)
     N = N_s[0]
 
-    # pdb.set_trace()
-    print(sum(g_s / (2 * numpy.pi * N) < 1 / L_s))
-
     cov_matrix, different_ensemble = cov_matrix_calc(g_s, L_s, m_s, samples)
     cov_1_2 = numpy.linalg.cholesky(cov_matrix)
     cov_inv = numpy.linalg.inv(cov_1_2)
@@ -115,14 +112,14 @@ def run_frequentist_analysis(input_h5_file, model, N_s, g_s, L_s, Bbar_s_in,
     p = chisq_pvalue(dof, chisq)
     param_central = res.x
 
-    if print_info:
-        print("##############################################################")
-        print(f"Config: N = {N}, Bbar_s = [{Bbar_s_in[0]}, {Bbar_s_in[1]}],"
-              f" gL_min = {GL_min}, gL_max = {GL_max}")
-        print(f"chisq = {chisq}")
-        print(f"chisq/dof = {chisq / dof}")
-        print(f"pvalue = {p}")
-        print(f"dof = {dof}")
+    # if print_info:
+        # print("##############################################################")
+        # print(f"Config: N = {N}, Bbar_s = [{Bbar_s_in[0]}, {Bbar_s_in[1]}],"
+        #       f" gL_min = {GL_min}, gL_max = {GL_max}")
+        # print(f"chisq = {chisq}")
+        # print(f"chisq/dof = {chisq / dof}")
+        # print(f"pvalue = {p}")
+        # print(f"dof = {dof}")
 
     # If the pvalue is acceptable, run a bootstrap to get a statistical error
     if run_bootstrap:

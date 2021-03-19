@@ -176,7 +176,7 @@ def get_pvalues_central_fit(N, model_name=None, poly=None, poly2=None):
     # pvalues["BICs_1"] = BICs_1
     # pvalues["BICs_2"] = BICs_2
 
-    print("##################################################################")
+    # print("##################################################################")
 
     return pvalues
 
@@ -670,7 +670,7 @@ def get_systematic_errors(N, model_name="model1", dof=None, poly=None, poly2=Non
 
     for i, Bbar_s in enumerate(Bbar_list):
         Bbar_1, Bbar_2 = Bbar_s
-        print(f"Running fits with Bbar_1 = {Bbar_1}, Bbar_2 = {Bbar_2}")
+        # print(f"Running fits with Bbar_1 = {Bbar_1}, Bbar_2 = {Bbar_2}")
 
         for j, GL_min in enumerate(GL_mins):
             pvalues[i, j], params[i, j], dofs[i, j] = \
@@ -707,7 +707,6 @@ def get_systematic_errors(N, model_name="model1", dof=None, poly=None, poly2=Non
 
     else:
         print("\\color{" + "red}" + "gL_{" + "min}" + f" &= {GL_mins[best]} \\\\ \\nonumber")
-
 
     if pvalues[best_Bbar_index, best] < 0.05:
         print("\\color{" + "red}" + f" p &= {pvalues[best_Bbar_index, best]} \\\\ \\nonumber")
@@ -1175,19 +1174,31 @@ for poly in [-2, -1, 1, 2, 3]:
                 for i, Bbar in enumerate(set(Bbar_s)):
                     sub_ind = numpy.argwhere(numpy.logical_and(g_s == g, Bbar_s == Bbar))
 
-                    if i == 0:
-                        plt.plot(L_space, model_Bbar_list(Bbar_s, N, g, 1 / L_space, Bbar, *central_values) / g, label=f'g = {g}', color=colors(g))
+                    if N == 2:
+                        if i == 0:
+                            plt.plot(L_space, model(N, g, 1 / L_space, Bbar, *central_values) / g, label=f'g = {g}', color=colors(g))
 
-                    if i == 1:
-                        plt.plot(L_space, model_Bbar_list(Bbar_s, N, g, 1 / L_space, Bbar, *central_values) / g, color=colors(g))
+                        if i == 1:
+                            plt.plot(L_space, model(N, g, 1 / L_space, Bbar, *central_values) / g, color=colors(g))
+
+                    if N == 4:
+                        if i == 0:
+                            plt.plot(L_space, model_Bbar_list(list(set(Bbar_s)), N, g, 1 / L_space, Bbar, *central_values) / g, label=f'g = {g}', color=colors(g))
+
+                        if i == 1:
+                            plt.plot(L_space, model_Bbar_list(list(set(Bbar_s)), N, g, 1 / L_space, Bbar, *central_values) / g, color=colors(g))
 
                     plt.scatter(1 / L_s[sub_ind], m_s[sub_ind] / g, color=colors(g))
 
-                    print("\\end{align" + "}")
-
+            print("\\end{align" + "}") 
             plt.xlabel("a / L")
             plt.ylabel("m[B = Bbar] / g")
             plt.title(f"polynomial range = [{poly}, {poly2}]")
             plt.legend()
             plt.savefig(f"graphs/{model_name}_fit_plot_{poly}_{poly2}.png", dpi=500)
             plt.close('all')
+
+            print("\\begin{figure}[H]")
+            print("\\centering")
+            print("\\includegraphics[width=100mm]{" + f"{model_name}" + f"_fit_plot_{poly}_{poly2}.png" + "}")
+            print("\\end{figure}")
