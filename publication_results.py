@@ -27,8 +27,7 @@
 
 from frequentist_run import run_frequentist_analysis
 from model_definitions import *
-from bayesian_functions import *
-import matplotlib.pyplot as plt
+# from bayesian_functions import *
 import pdb
 import sys
 
@@ -119,6 +118,17 @@ def get_pvalues_central_fit(N, model_name=None, poly=None, poly2=None):
 
             model2 = polyno
 
+        if model_name == "poly_range_no_log":
+            r = numpy.arange(poly, poly2 + 1)
+            r = r[r != 0]
+            param_names2 = ["\\alpha", "f_0", "f_1", "\\nu"] + ["\\epsilon_{" + f"{i}" + "}" for i in r]
+            x2 = [0, 0.5431, -0.03586, 2 / 3] + [0, ] * len(r)
+
+            def polyno(*args):
+                return polynomial_range_1a_no_log(poly, poly2, *args)
+
+            model2 = polyno
+
     if N == 4:
         N_s = [4]
         Bbar_s = [0.42, 0.43]
@@ -126,6 +136,7 @@ def get_pvalues_central_fit(N, model_name=None, poly=None, poly2=None):
         L_s = [8, 16, 32, 48, 64, 96, 128]
 
         x0 = [0, 0, 0.4459, -0.02707, 1, 2 / 3]  # EFT values
+        x2 = [0, 0, 0.4459, -0.02707, 1, 2 / 3]  # EFT values
 
         model1 = model1_2a
         model2 = model2_2a
@@ -150,6 +161,28 @@ def get_pvalues_central_fit(N, model_name=None, poly=None, poly2=None):
 
             model2 = monono
 
+        if model_name == "poly_range":
+            r = numpy.arange(poly, poly2 + 1)
+            r = r[r != 0]
+            param_names2 = ["alpha1", "alpha2", "f_0", "f_1", "\\beta", "\\nu"] + ["\\epsilon_{" + f"{i}" + "}" for i in r]
+            x2 = [0, 0, 0.4459, -0.02707, 1, 2 / 3] + [0, ] * len(r)
+
+            def polyno(*args):
+                return polynomial_range_2a(poly, poly2, *args)
+
+            model2 = polyno
+
+        if model_name == "poly_range_no_log":
+            r = numpy.arange(poly, poly2 + 1)
+            r = r[r != 0]
+            param_names2 = ["alpha1", "alpha2", "f_0", "f_1", "\\nu"] + ["\\epsilon_{" + f"{i}" + "}" for i in r]
+            x2 = [0, 0, 0.4459, -0.02707, 2 / 3] + [0, ] * len(r)
+
+            def polyno(*args):
+                return polynomial_range_2a_no_log(poly, poly2, *args)
+
+            model2 = polyno
+
     pvalues_1 = numpy.zeros(len(GL_mins))
     pvalues_2 = numpy.zeros(len(GL_mins))
     BICs_1 = numpy.zeros(len(GL_mins))
@@ -171,7 +204,7 @@ def get_pvalues_central_fit(N, model_name=None, poly=None, poly2=None):
         BICs_2[i] = len(x2) * numpy.log(dof2 + len(x2)) + chisq2
 
     pvalues = {}
-    # pvalues["pvalues1"] = pvalues_1
+    pvalues["pvalues1"] = pvalues_1
     pvalues["pvalues2"] = pvalues_2
     # pvalues["BICs_1"] = BICs_1
     # pvalues["BICs_2"] = BICs_2
@@ -666,8 +699,6 @@ def get_systematic_errors(N, model_name="model1", dof=None, poly=None, poly2=Non
     params = numpy.zeros((len(Bbar_list), len(GL_mins), n_params))
     dofs = numpy.zeros((len(Bbar_list), len(GL_mins)))
 
-    # pdb.set_trace()
-
     for i, Bbar_s in enumerate(Bbar_list):
         Bbar_1, Bbar_2 = Bbar_s
         # print(f"Running fits with Bbar_1 = {Bbar_1}, Bbar_2 = {Bbar_2}")
@@ -837,368 +868,233 @@ def get_systematic_errors(N, model_name="model1", dof=None, poly=None, poly2=Non
     results["param_names"] = param_names
     results["GL_min"] = GL_mins[best]
 
-    return results
-
-
-def get_Bayes_factors(N, points=5000, Bbar_fixed=None, model_name="", test_poly=False, poly=None, poly2=None, test_mono=False, lognormal=False):
-    """
-        This function produces the Bayes Factors shown in the publication.
+    return results, best_Bbar
+
+
+# def get_Bayes_factors(N, points=5000, Bbar_fixed=None, model_name="", test_poly=False, poly=None, poly2=None, test_mono=False, lognormal=False):
+#     """
+#         This function produces the Bayes Factors shown in the publication.
 
-        INPUTS :
-        --------
-        N: int, rank of the SU(N) valued fields
-        points: int, number of points to use in the MULTINEST algorithm. The
-            higher this is the more accurate the algorithm will be, but at the
-            price of computational cost. To produce the plot of the Bayes
-            factor against gL_min 5000 points were used. For the posterior
-            plots 1000 points were used.
+#         INPUTS :
+#         --------
+#         N: int, rank of the SU(N) valued fields
+#         points: int, number of points to use in the MULTINEST algorithm. The
+#             higher this is the more accurate the algorithm will be, but at the
+#             price of computational cost. To produce the plot of the Bayes
+#             factor against gL_min 5000 points were used. For the posterior
+#             plots 1000 points were used.
 
-        OUTPUTS :
-        ---------
-        Bayes_factors: The log10 of the Bayes factor of the
-            Lambda_IR = g / (4 pi N) model over the Lambda_IR = 1 / L model.
-            This is an array of lenght equal to the number of GL_min cuts
-            considered, with each element containin the log Bayes factor of the
-            corresponding GL_min cut.
-    """
-    GL_mins = numpy.array([4, 4.8, 6.4, 8, 9.6, 12.8, 14.4,
-                           16, 19.2, 24, 25.6, 28.8, 32])
-    GL_max = 76.8
+#         OUTPUTS :
+#         ---------
+#         Bayes_factors: The log10 of the Bayes factor of the
+#             Lambda_IR = g / (4 pi N) model over the Lambda_IR = 1 / L model.
+#             This is an array of lenght equal to the number of GL_min cuts
+#             considered, with each element containin the log Bayes factor of the
+#             corresponding GL_min cut.
+#     """
+#     GL_mins = numpy.array([4, 4.8, 6.4, 8, 9.6, 12.8, 14.4,
+#                            16, 19.2, 24, 25.6, 28.8, 32])
+#     GL_max = 76.8
 
-    # Where the output samples will be saved
-    directory = "MULTINEST_samples/"
+#     # Where the output samples will be saved
+#     directory = "MULTINEST_samples/"
 
-    # Use this to label different runs if you edit something
-    tag = ""
+#     # Use this to label different runs if you edit something
+#     tag = ""
 
-    # Prior Name: To differentiate results which use different priors
-    prior_name = "A"
+#     # Prior Name: To differentiate results which use different priors
+#     prior_name = "A"
 
-    # For reproducability
-    seed = 3475642
+#     # For reproducability
+#     seed = 3475642
 
-    g_s_in = [0.1, 0.2, 0.3, 0.5, 0.6]
-    L_s_in = [8, 16, 32, 48, 64, 96, 128]
-    GL_max = 76.8
+#     g_s_in = [0.1, 0.2, 0.3, 0.5, 0.6]
+#     L_s_in = [8, 16, 32, 48, 64, 96, 128]
+#     GL_max = 76.8
 
-    mu_s = None
-    sigma_s = None
-    param_idxs = None
+#     mu_s = None
+#     sigma_s = None
+#     param_idxs = None
 
-    if N == 2:
-        N = 2
-        N_s_in = [N]
+#     if N == 2:
+#         N = 2
+#         N_s_in = [N]
 
-        if Bbar_fixed is not None:
-            Bbar_s_in = Bbar_fixed
+#         if Bbar_fixed is not None:
+#             Bbar_s_in = Bbar_fixed
 
-        else:
-            Bbar_s_in = [0.52, 0.53]
+#         else:
+#             Bbar_s_in = [0.52, 0.53]
 
-        model1 = model1_1a
-        param_names = ["alpha", "f0", "f1", "beta", "nu"]
+#         model1 = model1_1a
+#         param_names = ["alpha", "f0", "f1", "beta", "nu"]
 
-        alpha_range = [-0.4, 0.4]
-        f0_range = [0, 1]
-        f1_range = [-20, 20]
-        beta_range = [-15, 15]
-        nu_range = [0, 15]
+#         alpha_range = [-0.4, 0.4]
+#         f0_range = [0, 1]
+#         f1_range = [-20, 20]
+#         beta_range = [-15, 15]
+#         nu_range = [0, 15]
 
-        prior_range = [alpha_range, f0_range, f1_range, beta_range,
-                       nu_range]
+#         prior_range = [alpha_range, f0_range, f1_range, beta_range,
+#                        nu_range]
 
-        n_params = len(prior_range)
+#         n_params = len(prior_range)
 
-        if test_poly:
-            def model2(*args):
-                return polynomial_1a(poly, *args)
+#         if test_poly:
+#             def model2(*args):
+#                 return polynomial_1a(poly, *args)
 
-            param_names2 = param_names + [f"eps{i}" for i in range(1, poly + 1)]
-            prior_range2 = prior_range + [beta_range for i in range(1, poly + 1)]
+#             param_names2 = param_names + [f"eps{i}" for i in range(1, poly + 1)]
+#             prior_range2 = prior_range + [beta_range for i in range(1, poly + 1)]
 
-            n_params2 = n_params + poly
+#             n_params2 = n_params + poly
 
-        elif test_mono:
-            def model2(*args):
-                return monomial_no_log_1a(poly, *args)
+#         elif test_mono:
+#             def model2(*args):
+#                 return monomial_no_log_1a(poly, *args)
 
-            param_names2 = param_names
-            prior_range2 = prior_range
+#             param_names2 = param_names
+#             prior_range2 = prior_range
 
-            n_params2 = n_params
+#             n_params2 = n_params
 
-        else:
-            model2 = model2_1a
-            n_params2 = n_params
-            prior_range2 = prior_range
-            param_names2 = param_names
+#         else:
+#             model2 = model2_1a
+#             n_params2 = n_params
+#             prior_range2 = prior_range
+#             param_names2 = param_names
 
-        if not lognormal:
-            if model_name == "poly_range":
-                r = numpy.arange(poly, poly2 + 1)
-                r = r[r != 0]
-                param_names2 = param_names + ["\\epsilon_{" + f"{i}" + "}" for i in r]
-                prior_range2 = prior_range + [beta_range for i in r]
+#         if not lognormal:
+#             if model_name == "poly_range":
+#                 r = numpy.arange(poly, poly2 + 1)
+#                 r = r[r != 0]
+#                 param_names2 = param_names + ["\\epsilon_{" + f"{i}" + "}" for i in r]
+#                 prior_range2 = prior_range + [beta_range for i in r]
 
-                tag = f"poly{poly}_{poly2}"
+#                 tag = f"poly{poly}_{poly2}"
 
-                def model2(*args):
-                    return polynomial_range_1a(poly, poly2, *args)
+#                 def model2(*args):
+#                     return polynomial_range_1a(poly, poly2, *args)
 
-                n_params2 = n_params + len(r)
+#                 n_params2 = n_params + len(r)
 
-        else:
-            beta_range = [10 ** -5, 10 ** 5]
-            prior_range = [alpha_range, f0_range, f1_range, beta_range,
-                        nu_range]
+#         else:
+#             beta_range = [10 ** -5, 10 ** 5]
+#             prior_range = [alpha_range, f0_range, f1_range, beta_range,
+#                         nu_range]
 
-            if model_name == "poly_range":
-                r = numpy.arange(poly, poly2 + 1)
-                r = r[r != 0]
-                param_names2 = param_names + ["\\epsilon_{" + f"{i}" + "}" for i in r]
-                prior_range2 = prior_range + [beta_range for i in r]
+#             if model_name == "poly_range":
+#                 r = numpy.arange(poly, poly2 + 1)
+#                 r = r[r != 0]
+#                 param_names2 = param_names + ["\\epsilon_{" + f"{i}" + "}" for i in r]
+#                 prior_range2 = prior_range + [beta_range for i in r]
 
-                tag = f"poly{poly}_{poly2}"
+#                 tag = f"poly{poly}_{poly2}"
 
-                def model2(*args):
-                    return polynomial_range_1a(poly, poly2, *args)
+#                 def model2(*args):
+#                     return polynomial_range_1a(poly, poly2, *args)
 
-                n_params2 = n_params + len(r)
+#                 n_params2 = n_params + len(r)
 
-                param_idxs = [3] + [(5 + i) for i, x in enumerate(r)]
-                sigma_s = [0.5, ] * len(param_idxs)
-                mu_s = [0, ] * len(param_idxs)
+#                 param_idxs = [3] + [(5 + i) for i, x in enumerate(r)]
+#                 sigma_s = [0.5, ] * len(param_idxs)
+#                 mu_s = [0, ] * len(param_idxs)
 
-                if poly == 1 and poly2 == 2:
-                    prior_range2 = prior_range + [[-10 ** -5, -10 ** 5],] + [beta_range,]
+#                 if poly == 1 and poly2 == 2:
+#                     prior_range2 = prior_range + [[-10 ** -5, -10 ** 5],] + [beta_range,]
 
-    if N == 4:
-        N = 4
-        N_s_in = [N]
+#     if N == 4:
+#         N = 4
+#         N_s_in = [N]
 
-        if Bbar_fixed is not None:
-            Bbar_s_in = Bbar_fixed
+#         if Bbar_fixed is not None:
+#             Bbar_s_in = Bbar_fixed
 
-        else:
-            Bbar_s_in = [0.42, 0.43]
+#         else:
+#             Bbar_s_in = [0.42, 0.43]
 
-        x0 = [0, 0, 0.4459, -0.02707, 1, 2 / 3]  # EFT values
+#         x0 = [0, 0, 0.4459, -0.02707, 1, 2 / 3]  # EFT values
 
-        model1 = model1_2a
-        param_names = ["alpha1", "alpha2", "f0", "f1", "beta", "nu"]
-        alpha_range1 = [-0.4, 0.4]
-        alpha_range2 = [-0.4, 0.4]
-        f0_range = [0, 1]
-        f1_range = [-20, 20]
-        beta_range = [-15, 15]
-        nu_range = [0, 15]
+#         model1 = model1_2a
+#         param_names = ["alpha1", "alpha2", "f0", "f1", "beta", "nu"]
+#         alpha_range1 = [-0.4, 0.4]
+#         alpha_range2 = [-0.4, 0.4]
+#         f0_range = [0, 1]
+#         f1_range = [-20, 20]
+#         beta_range = [-15, 15]
+#         nu_range = [0, 15]
 
-        prior_range = [alpha_range1, alpha_range2, f0_range, f1_range,
-                       beta_range, nu_range]
+#         prior_range = [alpha_range1, alpha_range2, f0_range, f1_range,
+#                        beta_range, nu_range]
 
-        n_params = len(prior_range)
+#         n_params = len(prior_range)
 
-        if test_poly:
-            def model2(*args):
-                return polynomial_2a(poly, *args)
+#         if test_poly:
+#             def model2(*args):
+#                 return polynomial_2a(poly, *args)
 
-            param_names2 = param_names + [f"eps{i}" for i in range(1, poly + 1)]
-            prior_range2 = prior_range + [beta_range for i in range(1, poly + 1)]
-            n_params2 = n_params + poly
+#             param_names2 = param_names + [f"eps{i}" for i in range(1, poly + 1)]
+#             prior_range2 = prior_range + [beta_range for i in range(1, poly + 1)]
+#             n_params2 = n_params + poly
 
-        elif test_mono:
-            def model2(*args):
-                return monomial_no_log_2a(poly, *args)
+#         elif test_mono:
+#             def model2(*args):
+#                 return monomial_no_log_2a(poly, *args)
 
-            param_names2 = param_names
-            prior_range2 = prior_range
+#             param_names2 = param_names
+#             prior_range2 = prior_range
 
-            n_params2 = n_params
+#             n_params2 = n_params
 
-        else:
-            model2 = model2_2a
-            n_params2 = n_params
-            prior_range2 = prior_range
-            param_names2 = param_names
+#         else:
+#             model2 = model2_2a
+#             n_params2 = n_params
+#             prior_range2 = prior_range
+#             param_names2 = param_names
 
-        if model_name == "poly_range":
-            r = numpy.arange(poly, poly2 + 1)
-            r = r[r != 0]
-            param_names2 = param_names + ["\\epsilon_{" + f"{i}" + "}" for i in r]
-            prior_range2 = prior_range + [beta_range for i in r]
+#         if model_name == "poly_range":
+#             r = numpy.arange(poly, poly2 + 1)
+#             r = r[r != 0]
+#             param_names2 = param_names + ["\\epsilon_{" + f"{i}" + "}" for i in r]
+#             prior_range2 = prior_range + [beta_range for i in r]
 
-            tag = f"poly{poly}_{poly2}"
+#             tag = f"poly{poly}_{poly2}"
 
-            def model2(*args):
-                return polynomial_range_1a(poly, poly2, *args)
+#             def model2(*args):
+#                 return polynomial_range_1a(poly, poly2, *args)
 
-            n_params2 = n_params + len(r)
+#             n_params2 = n_params + len(r)
 
-    Bayes_factors = numpy.zeros(len(GL_mins))
+#     Bayes_factors = numpy.zeros(len(GL_mins))
 
-    for i, GL_min in enumerate(GL_mins):
-        samples, g_s, L_s, Bbar_s, m_s = \
-            load_h5_data(h5_data_file, N_s_in, g_s_in, L_s_in, Bbar_s_in,
-                         GL_min, GL_max)
+#     for i, GL_min in enumerate(GL_mins):
+#         samples, g_s, L_s, Bbar_s, m_s = \
+#             load_h5_data(h5_data_file, N_s_in, g_s_in, L_s_in, Bbar_s_in,
+#                          GL_min, GL_max)
 
-        # pdb.set_trace()
-        analysis1, best_fit1 = \
-            run_pymultinest(prior_range, model1, GL_min, GL_max, n_params,
-                            directory, N, g_s, Bbar_s, L_s, samples, m_s,
-                            param_names, n_live_points=points,
-                            sampling_efficiency=0.3, clean_files=True,
-                            tag=tag, prior_name=prior_name, keep_GLmax=False,
-                            return_analysis_small=True, seed=seed)
+#         # pdb.set_trace()
+#         analysis1, best_fit1 = \
+#             run_pymultinest(prior_range, model1, GL_min, GL_max, n_params,
+#                             directory, N, g_s, Bbar_s, L_s, samples, m_s,
+#                             param_names, n_live_points=points,
+#                             sampling_efficiency=0.3, clean_files=True,
+#                             tag=tag, prior_name=prior_name, keep_GLmax=False,
+#                             return_analysis_small=True, seed=seed)
 
-        analysis2, best_fit2 = \
-            run_pymultinest(prior_range2, model2, GL_min, GL_max, n_params2,
-                            directory, N, g_s, Bbar_s, L_s, samples, m_s,
-                            param_names2, n_live_points=points,
-                            sampling_efficiency=0.3, clean_files=True,
-                            tag=tag, prior_name=prior_name, keep_GLmax=False,
-                            return_analysis_small=True, seed=seed, lognormal=lognormal, mu_s=mu_s,
-                            sigma_s=sigma_s, param_idxs=param_idxs)
+#         analysis2, best_fit2 = \
+#             run_pymultinest(prior_range2, model2, GL_min, GL_max, n_params2,
+#                             directory, N, g_s, Bbar_s, L_s, samples, m_s,
+#                             param_names2, n_live_points=points,
+#                             sampling_efficiency=0.3, clean_files=True,
+#                             tag=tag, prior_name=prior_name, keep_GLmax=False,
+#                             return_analysis_small=True, seed=seed, lognormal=lognormal, mu_s=mu_s,
+#                             sigma_s=sigma_s, param_idxs=param_idxs)
 
-        # This is the log of the Bayes factor equal to the difference in the
-        # log-evidence's between the two models
-        Bayes_factors[i] = analysis1[0] - analysis2[0]
+#         # This is the log of the Bayes factor equal to the difference in the
+#         # log-evidence's between the two models
+#         Bayes_factors[i] = analysis1[0] - analysis2[0]
 
-    # Change log bases to log10 to match the plot in the publication
-    Bayes_factors = Bayes_factors / numpy.log(10)
+#     # Change log bases to log10 to match the plot in the publication
+#     Bayes_factors = Bayes_factors / numpy.log(10)
 
-    return Bayes_factors
-
-
-N = int(sys.argv[1])
-model_name = sys.argv[2]
-pvalues = get_pvalues_central_fit(2, model_name="poly_range", poly=1, poly2=2)
-
-for poly in [-2, -1, 1, 2, 3]:
-    for poly2 in range(poly, 4):
-        if poly2 != 0:
-            print("\\subsubsection{" + f"Exponents between {poly} and {poly2}" + "}")
-            print("")
-            print("\\begin{" + "align}")
-
-            results = get_systematic_errors(N, model_name, poly=poly, poly2=poly2)
-            central_values = results["params_central"]
-            GL_min = results["GL_min"]
-            GL_max = 76.8
-
-            if model_name == "poly_range":
-                if N == 2:
-                    def polyno(*args):
-                        return polynomial_range_1a(poly, poly2, *args)
-
-                if N == 4:
-                    def polyno(*args):
-                        return polynomial_range_2a(poly, poly2, *args)
-
-                    def polyno2(Bbar_s, *args):
-                        return polynomial_range_2a_Bbar_list(Bbar_s, poly, poly2, *args)
-
-                    model_Bbar_list = polyno2
-
-            if model_name == "poly_range_no_log":
-                if N == 2:
-                    def polyno(*args):
-                        return polynomial_range_1a_no_log(poly, poly2, *args)
-
-                if N == 4:
-                    def polyno(*args):
-                        return polynomial_range_2a_no_log(poly, poly2, *args)
-
-                    def polyno2(Bbar_s, *args):
-                        return polynomial_range_2a_no_log_Bbar_list(Bbar_s, poly, poly2, *args)
-
-                    model_Bbar_list = polyno2
-
-            if model_name == "poly_range_no_scaling":
-                if N == 2:
-                    def polyno(*args):
-                        return polynomial_range_1a_no_scaling(poly, poly2, *args)
-
-                if N == 4:
-                    def polyno(*args):
-                        return polynomial_range_2a_no_scaling(poly, poly2, *args)
-
-                    def polyno2(Bbar_s, *args):
-                        return polynomial_range_2a_no_scaling_Bbar_list(Bbar_s, poly, poly2, *args)
-
-                    model_Bbar_list = polyno2
-
-            if model_name == "poly_range_no_scaling_no_log":
-                if N == 2:
-                    def polyno(*args):
-                        return polynomial_range_1a_no_scaling_no_log(poly, poly2, *args)
-
-                if N == 4:
-                    def polyno(*args):
-                        return polynomial_range_2a_no_scaling_no_log(poly, poly2, *args)
-
-                    def polyno2(Bbar_s, *args):
-                        return polynomial_range_2a_no_scaling_no_log_Bbar_list(Bbar_s, poly, poly2, *args)
-
-                    model_Bbar_list = polyno2
-
-            model = polyno
-
-            g_s_in = [0.1, 0.2, 0.3, 0.5, 0.6]
-            L_s_in = [8, 16, 32, 48, 64, 96, 128]
-            N_s_in = [N]
-
-            if N == 2:
-                Bbar_s_in = [0.52, 0.53]
-
-            if N == 4:
-                Bbar_s_in = [0.42, 0.43]
-
-            samples, g_s, L_s, Bbar_s, m_s = load_h5_data(h5_data_file, N_s_in, g_s_in, L_s_in,
-                                                            Bbar_s_in, GL_min, GL_max)
-
-            def colors(g):
-                if g == 0.1:
-                    return 'g'
-                if g == 0.2:
-                    return 'r'
-                if g == 0.3:
-                    return 'k'
-                if g == 0.5:
-                    return 'y'
-                if g == 0.6:
-                    return 'b'
-
-            L_space = numpy.linspace(1 / max(L_s), 1 / min(L_s), 1000)
-
-            for g in set(g_s):
-                for i, Bbar in enumerate(set(Bbar_s)):
-                    sub_ind = numpy.argwhere(numpy.logical_and(g_s == g, Bbar_s == Bbar))
-
-                    if N == 2:
-                        if i == 0:
-                            plt.plot(L_space, model(N, g, 1 / L_space, Bbar, *central_values) / g, label=f'g = {g}', color=colors(g))
-
-                        if i == 1:
-                            plt.plot(L_space, model(N, g, 1 / L_space, Bbar, *central_values) / g, color=colors(g))
-
-                    if N == 4:
-                        if i == 0:
-                            plt.plot(L_space, model_Bbar_list(list(set(Bbar_s)), N, g, 1 / L_space, Bbar, *central_values) / g, label=f'g = {g}', color=colors(g))
-
-                        if i == 1:
-                            plt.plot(L_space, model_Bbar_list(list(set(Bbar_s)), N, g, 1 / L_space, Bbar, *central_values) / g, color=colors(g))
-
-                    plt.scatter(1 / L_s[sub_ind], m_s[sub_ind] / g, color=colors(g))
-
-            print("\\end{align" + "}") 
-            plt.xlabel("a / L")
-            plt.ylabel("m[B = Bbar] / g")
-            plt.title(f"polynomial range = [{poly}, {poly2}]")
-            plt.legend()
-            plt.savefig(f"graphs/{model_name}_fit_plot_{poly}_{poly2}.png", dpi=500)
-            plt.close('all')
-
-            print("\\begin{figure}[H]")
-            print("\\centering")
-            print("\\includegraphics[width=100mm]{" + f"{model_name}" + f"_fit_plot_{poly}_{poly2}.png" + "}")
-            print("\\end{figure}")
+#     return Bayes_factors

@@ -294,6 +294,93 @@ def model2_2a(N, g, L, Bbar, alpha1, alpha2, f0, f1, lambduh, nu):
                         - lambduh * K2(L, N))
 
 
+def model1_2a_Bbar_list(Bbar_s, N, g, L, Bbar, alpha1, alpha2, f0, f1, lambduh, nu):
+    """
+        Fit anzatz with Lambda_IR = g / (4 pi N) and two values of alpha
+
+        INPUTS :
+        --------
+        N: int, rank of the SU(N) field matrices
+        g: float, coupling constant
+        L: int, lattice size
+        Bbar: float, value of Bbar where masses intercept
+        alpha1: As written in fit anzatz
+        alpha2: As written in fit anzatz
+        f0: Equal to f(0) in the fit anzatz
+        f1: Equal to f'(0) in the fit anzatz
+        lambduh: Coefficient multiplying the log term in the fit anzatz
+        nu: float, scaling exponent
+
+        OUTPUTS :
+        ---------
+        float, estimate of the critical mass where the binder cumulant graph
+            crosses the constant Binder value of Bbar
+    """
+    Bbar_s = numpy.sort(list(set(Bbar_s)))
+    alpha = numpy.where(Bbar == Bbar_s[0], alpha1, alpha2)
+
+    return mPT_1loop(g, N) + g ** 2 *\
+                    (alpha + (g * L) ** (-1 / nu) * ((Bbar - f0) / f1)
+                        - lambduh * K1(g, N))
+
+
+def model2_2a_Bbar_list(Bbar_s, N, g, L, Bbar, alpha1, alpha2, f0, f1, lambduh, nu):
+    """
+        Fit anzatz with Lambda_IR = g / (4 pi N) and two values of alpha
+
+        INPUTS :
+        --------
+        N: int, rank of the SU(N) field matrices
+        g: float, coupling constant
+        L: int, lattice size
+        Bbar: float, value of Bbar where masses intercept
+        alpha1: As written in fit anzatz
+        alpha2: As written in fit anzatz
+        f0: Equal to f(0) in the fit anzatz
+        f1: Equal to f'(0) in the fit anzatz
+        lambduh: Coefficient multiplying the log term in the fit anzatz
+        nu: float, scaling exponent
+
+        OUTPUTS :
+        ---------
+        float, estimate of the critical mass where the binder cumulant graph
+        crosses the constant Binder value of Bbar
+    """
+    Bbar_s = numpy.sort(list(set(Bbar_s)))
+    alpha = numpy.where(Bbar == Bbar_s[0], alpha1, alpha2)
+
+    return mPT_1loop(g, N) + g ** 2 *\
+                    (alpha + (g * L) ** (-1 / nu) * ((Bbar - f0) / f1)
+                        - lambduh * K2(L, N))
+
+
+def polynomial_range_2a_Bbar_list(Bbar_s, n1, n2, N, g, L, Bbar, alpha1, alpha2, f0, f1, lambduh, nu, *args):
+    """
+        Fit anzatz with Lambda_IR = L and a single value of alpha
+
+        INPUTS :
+        --------
+        N: int, rank of the SU(N) field matrices
+        g: float, coupling constant
+        L: int, lattice size
+        Bbar: float, value of Bbar where masses intercept
+        alpha: As written in fit anzatz
+        f0: Equal to f(0) in the fit anzatz
+        f1: Equal to f'(0) in the fit anzatz
+        lambduh: Coefficient multiplying the log term in the fit anzatz
+        nu: float, scaling exponent
+
+        OUTPUTS :
+        ---------
+        float, estimate of the critical mass where the binder cumulant graph
+        crosses the constant Binder value of Bbar
+    """
+    alpha = numpy.where(Bbar == Bbar_s[0], alpha1, alpha2)
+
+    return mPT_1loop(g, N) + g ** 2 *\
+                    (alpha + (g * L) ** (-1 / nu) * ((Bbar - f0) / f1)
+                        - lambduh * K2(L, N) + polynomial_range(g * L, n1, n2, N, *args))
+
 def model1_1a_g4(N, g, L, Bbar, alpha, f0, f1, lambduh, nu, eps):
     """
         Fit anzatz with Lambda_IR = g / (4 pi N) and a single value of alpha
