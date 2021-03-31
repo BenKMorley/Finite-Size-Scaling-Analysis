@@ -22,20 +22,22 @@ pvalues_array.append(pvalues)
 
 pvalues_array = numpy.array(pvalues_array)
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(20, 10))
 
-ax.plot(GL_mins, pvalues_array[0], label="log(g)")
-ax.plot(GL_mins, pvalues_array[1], label="log(L)")
+ax.plot(GL_mins, pvalues_array[0], label=r"$\log(g)$")
+ax.plot(GL_mins, pvalues_array[1], label=r"$\log(L)$")
 
 for i in range(1, 5):
-    ax.plot(GL_mins, pvalues_array[i + 1], label=f"x ** {i} term")
+    ax.plot(GL_mins, pvalues_array[i + 1], label=rf"$x^{i}$ term")
     ax.set_yscale('log')
 
-ax.plot(GL_mins, pvalues_array[-1], label=f"no log(L) or monomial")
+ax.plot(GL_mins, pvalues_array[-1], label=rf"no $\log(L)$ or monomial")
+ax.plot([min(GL_mins), max(GL_mins)], [1, 1], ls='--', color='k', label=r'$p=1$')
 
 plt.legend()
-plt.xlabel("gL_min")
+plt.xlabel(r"$gL_{min}$")
 plt.ylabel("pvalue")
-plt.title(f"N = {N}")
+plt.title(rf"$N = {N}$")
+plt.show()
 
 print(max(max_pvalues))
