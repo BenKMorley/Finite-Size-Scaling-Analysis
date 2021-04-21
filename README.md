@@ -7,6 +7,9 @@
  - Andreas Juettner    <juettner@soton.ac.uk>
  - Ben Kitching-Morley <bkm1n18@soton.ac.uk>
 
+## Preamble
+For the p-value graph with monomial terms use the pvalues_monomial_terms.py script. You can change N=2 in the script. Here follows the readme taken from the main repository 
+
 ## Introduction:
 These scripts were used for the data analysis underlying the paper
 
