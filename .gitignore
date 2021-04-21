@@ -3,3 +3,4 @@ __pycache__
 graphs/*
 *cypthon*
 *.pdf
+get_dist.py Plot_fits.py
