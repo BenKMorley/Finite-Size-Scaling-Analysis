@@ -13,14 +13,10 @@ pvalues_array.append(pvalues["pvalues2"])
 max_pvalues = []
 
 for poly in range(1, 5):
-    # poly_range includes all monomials with exponents between poly and poly2
-    # inclusively. Therefore if poly=poly2=x, then only a monomial with power x
-    # is included
     pvalues = get_pvalues_central_fit(N, model_name="poly_range_no_log", poly=poly, poly2=poly)["pvalues2"]
     pvalues_array.append(pvalues)
     max_pvalues.append(max(pvalues))
 
-# With poly > poly2 no monomial terms included. Use this for reference
 pvalues = get_pvalues_central_fit(N, model_name="poly_range_no_log", poly=2, poly2=1)["pvalues2"]
 pvalues_array.append(pvalues)
 
